@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat LLM Local</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      #chat {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        background: #f4f4f4;
+      }
+
+      .message {
+        max-width: 60%;
+        padding: 10px 14px;
+        margin: 8px 0;
+        border-radius: 20px;
+        clear: both;
+      }
+
+      .user {
+        background-color: #dcf8c6;
+        align-self: flex-end;
+        float: right;
+      }
+
+      .llm {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        align-self: flex-start;
+        float: left;
+      }
+
+      #input-area {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+        background: white;
+      }
+
+      #message {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+      }
+
+      #send {
+        margin-left: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+
+      #controls {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background: #eee;
+        border-bottom: 1px solid #ccc;
+      }
+
+      button {
+        padding: 8px 16px;
+        margin-right: 10px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <div>
+        <button id="connect">Conectar</button>
+        <button id="disconnect" disabled>Desconectar</button>
+      </div>
+      <strong>🧠 Chat LLM Local</strong>
+    </div>
+
+    <div id="chat"></div>
+
+    <div id="input-area">
+      <input type="text" id="message" placeholder="Digite sua mensagem..." />
+      <button id="send">Enviar</button>
+    </div>
+
+    <script>
+      let socket;
+
+      const chat = document.getElementById("chat");
+      const messageInput = document.getElementById("message");
+      const sendBtn = document.getElementById("send");
+      const connectBtn = document.getElementById("connect");
+      const disconnectBtn = document.getElementById("disconnect");
+
+      function appendMessage(text, className) {
+        const div = document.createElement("div");
+        div.className = "message " + className;
+        div.textContent = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function connect() {
+        socket = new WebSocket("ws://localhost:8765");
+
+        socket.onopen = () => {
+          appendMessage("✅ Conectado ao servidor!", "llm");
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+        };
+
+        socket.onmessage = (event) => {
+          appendMessage(event.data, "llm");
+        };
+
+        socket.onclose = () => {
+          appendMessage("❌ Desconectado do servidor.", "llm");
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+        };
+
+        socket.onerror = (err) => {
+          console.error("Erro no WebSocket:", err);
+        };
+      }
+
+      function disconnect() {
+        if (socket) {
+          socket.close();
+        }
+      }
+
+      function sendMessage() {
+        const msg = messageInput.value.trim();
+        if (!msg || socket.readyState !== WebSocket.OPEN) return;
+
+        appendMessage(msg, "user");
+        socket.send(msg);
+        messageInput.value = "";
+      }
+
+      sendBtn.onclick = sendMessage;
+      messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      connectBtn.onclick = connect;
+      disconnectBtn.onclick = disconnect;
+    </script>
+  </body>
+</html>
