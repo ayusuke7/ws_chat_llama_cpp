@@ -46,17 +46,28 @@ async def start_server():
     llm = Llama(
         model_path=MODEL_PATH,
         n_threads=4,
+        n_ctx=2048,
         n_gpu_layers=1,
         verbose=False,
     )
     print("✅ Modelo carregado!")
 
     async def handle_client(websocket):
+        history = ""
+
         async for message in websocket:
             print(f"Prompt recebido: {message}")
-            result = llm(message, max_tokens=200, stop=[
-                         "</s>", "\nUser:"], echo=False)
+
+            history += f"Usuário: {message}\nAssistente:"
+            result = llm(
+                history,
+                max_tokens=200,
+                stop=["</s>", "\nUser:", "\nUsuário:"],
+                echo=False
+            )
+
             response = result["choices"][0]["text"].strip()
+            history += f" {response}\n"
             await websocket.send(response)
             # print(f"Resposta enviada: {response}")
 
