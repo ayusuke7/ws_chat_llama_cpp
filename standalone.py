@@ -7,34 +7,32 @@ MODEL_DIR = "models"
 MODEL_PATH = os.path.join(MODEL_DIR, MODEL_NAME)
 
 
-# 1. Carregue o modelo
-llm = Llama(model_path=MODEL_PATH, n_ctx=2048, n_threads=4, verbose=False)
+llm = Llama(
+    model_path=MODEL_PATH,
+    n_ctx=2048,
+    n_threads=4,
+    verbose=False
+)
 
-# 2. Crie uma variável para armazenar o histórico
-historico = ""
+history = ""
 
-# 3. Loop de chat
 while True:
-    # Pergunta do usuário
-    pergunta = input("Você: ")
 
-    if pergunta.lower() in ["sair", "exit", "quit"]:
+    answer = input("You: ")
+    if answer.lower() in ["exit", "quit"]:
         break
 
-    # Atualiza o histórico
-    historico += f"Usuário: {pergunta}\nAssistente:"
+    history += f"You: {answer}\n"
 
-    # Faz a inferência
-    resposta = llm(
-        historico,
+    response = llm(
+        history,
         max_tokens=256,
-        stop=["Usuário:"],  # Para parar no final da resposta
+        stop=["\n", "You:"],
+        temperature=0.5,
         echo=False
     )
 
-    # Extrai e mostra a resposta
-    texto_resposta = resposta["choices"][0]["text"].strip()
-    print(f"Assistente: {texto_resposta}\n")
+    text_response = response["choices"][0]["text"].strip()
+    history += f"LLM: {text_response}\n"
 
-    # Atualiza histórico com a resposta também
-    historico += f" {texto_resposta}\n"
+    print(f"LLM: {text_response}")
